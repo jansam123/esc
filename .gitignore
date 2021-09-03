@@ -2,4 +2,4 @@
 test_codes/
 main*
 !main.tex
-*.pyc
+__pycache__/
