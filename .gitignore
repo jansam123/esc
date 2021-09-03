@@ -1,0 +1,5 @@
+.DS_Store
+test_codes/
+main*
+!main.tex
+*.pyc

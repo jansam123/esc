@@ -1,0 +1,72 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage{fkssugar}
+\usepackage[utf8]{inputenc}
+\usepackage[slovak]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}\usepackage{lmodern}
+\usepackage[top = 2cm, bottom = 2cm, left = 2cm, right = 2cm]{geometry}
+
+    
+%For title page
+\usepackage{titlesec}
+\usepackage{setspace} %Rámeček nahoře
+\usepackage{framed} %Rámeček nahoře
+\usepackage{array} %Tabulka dole
+
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{newfloat}
+
+\DeclareFloatingEnvironment{graph}
+\addto\captionsczech{%
+  \renewcommand{\graphname}{Graf}%
+  \renewcommand{\figurename}{Obr.}%
+}
+\addto\captionsslovak{%
+  \renewcommand{\graphname}{Graf}%
+  \renewcommand{\figurename}{Obr.}%
+}
+
+\bibliographystyle{ieeetr}
+
+
+%-------------------- INFORMACE NA PREDNE STRANE PROTOKOLU ------------------------
+%CISLO PRAKTIKA
+\newcommand\cisloPraktika{II}
+%MENO
+\newcommand\jmeno{Samuel Jankových}
+%MAIL
+\newcommand\mail{samueljankovych@gmail.com}
+
+%NÁZEV ÚLOHY
+\newcommand\nazevUlohy{}
+%ČÍSLO ÚLOHY
+\newcommand\cisloUlohy{}
+%DATUM MERANIA
+\newcommand\datumMerani{} %format: 30.\,9.\,2021 
+%----------------------------------------------------------------------------------
+ 
+\begin{document}
+\input{title_page.tex}
+
+\section{Pracovná úloha}
+\input{sections/pracovna_uloha.tex}
+
+\section{Teória}
+\input{sections/teoria.tex}
+
+\section{Výsledky a spracovanie merania}
+\input{sections/vysledky_a_spracovanie_merania.tex}
+
+\section{Diskusia}
+\input{sections/diskusia.tex}
+
+\section{Záver}
+\input{sections/zaver.tex}
+ 
+
+\bibliography{/Users/samueljankovych/Documents/bibtex/Praktika.bib}
+\end{document}
+
