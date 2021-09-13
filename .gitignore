@@ -3,3 +3,5 @@ test_codes/
 main*
 !main.tex
 __pycache__/
+plot.png
+LaTeX/tables/

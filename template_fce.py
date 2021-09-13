@@ -13,11 +13,26 @@ plt.rcdefaults()
 # Tell matplotlib to use the locale we set above
 plt.rcParams['axes.formatter.use_locale'] = True
 
+class MA(q.MeasurementArray):
 
 
-def avg(measurement):
-    sum_of_squares = sum([error**2 for error in measurement.errors])
-    return q.Measurement(measurement.mean().value, np.sqrt(sum_of_squares)/len(measurement.errors))
+    def set_un(self, unit):
+        self.un = unit
+
+    def add_MA(self, MeasurementArrays):
+        data = self.values
+        err = self.errors
+        for measArr in MeasurementArrays:
+            data = np.append(data, measArr.values)
+            err = np.append(err, measArr.errors)
+
+        return MA(data, err)
+
+    def avg(self):
+        sum_of_squares = sum([error**2 for error in self.errors])
+        return q.Measurement(self.mean().value, np.sqrt(sum_of_squares)/len(self.errors))
+    
+
 
 
 def fitNplot(xdata,ydata,model,guess, xlabel=None, ylabel=None, ax=None ,name=None, exclude=None, fmt1='o', fmt2='-',  label=None):
@@ -99,10 +114,10 @@ def to_csv(subor, veliciny, names=[]):
     df.to_csv(subor+".csv",sep=";",decimal=",",index=False)
 
 
-def to_table(colomns , units, index = 0, error = True, inline_error = False, save=False, file_name='data_to_table'):
+def to_table(colomns, index=0, error = True, inline_error = False, save=False, file_name='data_to_table'):
     df = pd.DataFrame()
     
-    for i, col in enumerate(colomns):
+    for col in colomns:
         errors=[]
         values=[]
         
@@ -124,41 +139,54 @@ def to_table(colomns , units, index = 0, error = True, inline_error = False, sav
                 break
         
         name = col.name
-        unit = units[i]
         
         if not sigma and inline_error:
             for k, val in enumerate(values):
                 values[k] = r"${} \pm {}$".format(str(val).replace('.', ','),str(errors[k]).replace('.', ','))
             
-           
-        df[r"${}$ \\ $[{}]$".format(name, unit)] = values
-        if len(errors)>0:
-            df[r"$\sigma_{}$ \\ $[{}]$".format("{"+str(name)+"}", unit)] = errors
-    
-    df= df.set_index(r"${}$ \\ $[{}]$".format(colomns[index].name, units[index]))
-    
+        if hasattr(col, 'un'):
+            unit = col.un
+            df[r"${}$ \\ $[{}]$".format(name, unit)] = values
+            if len(errors)>0:
+                df[r"$\sigma_{}$ \\ $[{}]$".format("{"+str(name)+"}", unit)] = errors
+
+        else:
+            df[r"${}$".format(name)] = values
+            if len(errors)>0:
+                df[r"$\sigma_{}$".format("{"+str(name)+"}")] = errors
+
+
+    if hasattr(colomns[index], 'un'): 
+        df = df.set_index(r"${}$ \\ $[{}]$".format(colomns[index].name, colomns[index].un))
+    else:
+        df = df.set_index(r"${}$".format(colomns[index].name))
+
     if save == 'csv':
         df.to_csv(file_name+'.csv',sep=";",decimal=",",index=True)
 
     elif save == 'tex':
         pandas_to_latex(df, file_name)
-        
 
+    elif save == 'latex':
+        df.to_latex(file_name+'.tex',escape=False, multirow=True, multicolumn=True)
+    
     return df
     
+
+
 def pandas_to_latex(df, file_name):
     outfile = open(file_name+'.tex','w')
-    col_setup = '{|'
+    col_setup = '{'
     for _ in range(len(df.keys())+1):
-        col_setup += 'c|'
+        col_setup += 'c'
     col_setup += '}' 
     string = []
-    string += [r'\begin{table}[!htb]', r'\centering', r'\caption{}', r'\label{tab:}', r'\begin{tabular}'+col_setup, r'\hline']
+    string += [r'\begin{table}[!htb]', r'\centering', r'\caption{}', r'\label{tab:}', r'\begin{tabular}'+col_setup, r'\toprule']
     col_names = r'\begin{tabular}[c]{@{}c@{}} ' + df.index.name + r' \end{tabular}  &'
     for col in df.keys():
         col_names += r'  \begin{tabular}[c]{@{}c@{}} ' + col + r' \end{tabular}  &'
     col_names = col_names[:-1] 
-    string += [col_names + r'\\ \hline']
+    string += [col_names+r'\\', r'\midrule']
 
     for idx, idx_val in enumerate(df.index):
         row_string = f'{idx_val}  &'
@@ -166,8 +194,8 @@ def pandas_to_latex(df, file_name):
             row_string += f'  {df.iloc[idx,col_num]}  &'
         string += [row_string[:-1] + r'\\']
 
-    string[-1] += r' \hline'
-    string += [r'\end{tabular}', r'\end{table}']
+    #string[-1] += r' \hline'
+    string += [r'\bottomrule', r'\end{tabular}', r'\end{table}']
     for val in string:
         outfile.write(val+'\n')
     outfile.close()
