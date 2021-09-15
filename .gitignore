@@ -5,3 +5,4 @@ main*
 __pycache__/
 plot.png
 LaTeX/tables/
+.vscode/
