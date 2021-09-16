@@ -4,6 +4,7 @@ import pandas as pd
 # import qexpy.plotting as plt
 import matplotlib.pyplot as plt
 from matplotlib import container
+import re
 # import locale
 # Set to German locale to get comma decimal separater
 # locale.setlocale(locale.LC_NUMERIC, "sk_SK.utf8")
@@ -25,7 +26,6 @@ class MA(q.MeasurementArray):
         for measArr in MeasurementArrays:
             data = np.append(data, measArr.values)
             err = np.append(err, measArr.errors)
-
         return MA(data, err)
 
     def avg(self):
@@ -100,18 +100,6 @@ def first_sqn(x):
 first_sgn = np.vectorize(first_sqn)
 
 
-def to_csv(subor, veliciny, names=[]):
-    df = pd.DataFrame()
-    if len(names) == 0:
-        nazov = [str(j) for j in range(len(veliciny))]
-    else:
-        nazov = names
-    for i, vel in enumerate(veliciny):
-        df[nazov[i]] = vel
-        
-    df.to_csv(subor + ".csv", sep=";", decimal=",", index=False)
-
-
 def to_table(colomns, index=0, error=True, inline_error=False, save=False, file_name='data_to_table'):
     df = pd.DataFrame()
     
@@ -137,13 +125,12 @@ def to_table(colomns, index=0, error=True, inline_error=False, save=False, file_
                 break
 
         name = col.name
-
         if not sigma and inline_error:
             for k, val in enumerate(values):
                 values[k] = r"${} \pm {}$".format(str(val).replace('.', ','), str(errors[k]).replace('.', ','))
 
         if hasattr(col, 'un'):
-            unit = col.un
+            unit = unit_to_latex(col.un)
             df[r"${}$ \\ $[{}]$".format(name, unit)] = values
             if len(errors) > 0:
                 df[r"$\sigma_{}$ \\ $[{}]$".format("{" + str(name) + "}", unit)] = errors
@@ -154,7 +141,7 @@ def to_table(colomns, index=0, error=True, inline_error=False, save=False, file_
                 df[r"$\sigma_{}$".format("{" + str(name) + "}")] = errors
 
     if hasattr(colomns[index], 'un'): 
-        df = df.set_index(r"${}$ \\ $[{}]$".format(colomns[index].name, colomns[index].un))
+        df = df.set_index(r"${}$ \\ $[{}]$".format(colomns[index].name, unit_to_latex(colomns[index].un)))
     else:
         df = df.set_index(r"${}$".format(colomns[index].name))
 
@@ -169,6 +156,10 @@ def to_table(colomns, index=0, error=True, inline_error=False, save=False, file_
     
     return df
     
+
+def unit_to_latex(string):
+    return re.sub(r"([a-zA-Z]+)", r'\\text{\1}', string)
+
 
 def pandas_to_latex(df, file_name):
     outfile = open(file_name + '.tex', 'w')
