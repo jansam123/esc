@@ -18,7 +18,7 @@ plt.rcParams['axes.formatter.use_locale'] = True
 class MA(q.MeasurementArray):
 
     def set_un(self, unit):
-        self.un = unit
+        self.un = unit 
 
     def add_MA(self, MeasurementArrays):
         data = self.values
@@ -32,39 +32,72 @@ class MA(q.MeasurementArray):
         sum_of_squares = sum([error**2 for error in self.errors])
         return q.Measurement(self.mean().value, np.sqrt(sum_of_squares) / len(self.errors))
 
+def plot(xdata, ydata, xlabel=None, ylabel=None, ax=None, fname=None, fmt='o', label=None):
 
-def fitNplot(xdata, ydata, model, guess, xlabel=None, ylabel=None, ax=None, name=None, exclude=None, fmt1='o', fmt2='-', label=None):
+    own_fig = False
+    if ax is None:
+        own_fig = True
+        fig, self_ax = plt.subplots()
+    else:
+        self_ax = ax
 
-    tmp = False
+    self_ax.errorbar(xdata.values, ydata.values, yerr=ydata.errors, fmt=fmt, label=label, capsize=4, ms=8)
+    
+    if xlabel is not None:
+        self_ax.set_xlabel(xlabel)
+    elif self_ax.xaxis.get_label().get_text() == '':
+        if hasattr(xdata, 'un') and hasattr(xdata, 'name'):
+            self_ax.set_xlabel(f'${xdata.name} \ [{unit_to_latex(xdata.un, plt=True)}]$')
+            
+        elif hasattr(xdata, 'name'):
+            self_ax.set_xlabel(f'${xdata.name} \ [1]$')
+
+    if ylabel is not None:
+        self_ax.set_ylabel(ylabel)
+    elif self_ax.yaxis.get_label().get_text() == '': 
+        if hasattr(ydata, 'un'):
+            self_ax.set_ylabel(f'${ydata.name} \ [{unit_to_latex(ydata.un, plt= True)}]$')
+        else:
+            self_ax.set_ylabel(f'${ydata.name} \ [1]$')
+    
+    handles, labels = self_ax.get_legend_handles_labels()
+    handles = [h[0] if isinstance(h, container.ErrorbarContainer) else h for h in handles]
+    self_ax.legend(handles, labels)                            
+
+    if fname is not None:
+        plt.savefig(fname + '.png')
+
+    if own_fig:
+        return  self_ax, fig
+    else:
+        return  self_ax
+
+
+def fitNplot(xdata, ydata, model, guess, xlabel=None, ylabel=None, ax=None, fname=None, exclude=None, fmt1='o', model_fmt='-', label=None):
+
     if exclude:
         fit = q.fit(xdata.delete(exclude), ydata.delete(exclude), model, parguess=guess)    
     else:
         fit = q.fit(xdata, ydata, model, parguess=guess)    
 
+    own_fig = False
     if ax is None:
-        tmp = True
-        fig, ax = plt.subplots()
-    
-    ax.errorbar(xdata.values, ydata.values, yerr=ydata.errors, fmt=fmt1, label=label, capsize=4, ms=8)
-    params = [exp_val.value for exp_val in fit.params]
-    x_fit = np.linspace(xdata.values.min(), xdata.values.max(), 100)
-    model_vals = model(x_fit, *params)
-    ax.plot(x_fit, model_vals, fmt2, zorder=10)
-    ax.set_xlabel(xlabel)
-    ax.set_ylabel(ylabel)
-
-    handles, labels = ax.get_legend_handles_labels()
-    handles = [h[0] if isinstance(h, container.ErrorbarContainer) else h for h in handles]
-
-    ax.legend(handles, labels)                            
-
-    if name is not None:
-        plt.savefig(name + '.png')
-
-    if tmp:
-        return fit.params, ax, fig
+        own_fig = True
+        fig, self_ax = plt.subplots()
     else:
-        return fit.params, ax
+        self_ax = ax
+
+    params = [exp_val.value for exp_val in fit.params]
+    x_fit = np.linspace(xdata.values.min(), xdata.values.max(), 10*len(xdata.values))
+    model_vals = model(x_fit, *params)
+    self_ax.plot(x_fit, model_vals, model_fmt, zorder=10)
+
+    self_ax = plot(xdata, ydata, xlabel, ylabel, self_ax, fname, fmt1, label)
+
+    if own_fig:
+        return fit.params, self_ax, fig
+    else:
+        return fit.params, self_ax
 
 
 def get_data(name, col=[], errors=[], NaN=False, numpy=False, sep=";", decimal=",", file_type='.csv'):
@@ -100,7 +133,7 @@ def first_sqn(x):
 first_sgn = np.vectorize(first_sqn)
 
 
-def to_table(colomns, index=0, error=True, inline_error=False, save=False, file_name='data_to_table'):
+def to_table(colomns, index=0, error=True, inline_error=False, save=False, fname='data_to_table'):
     df = pd.DataFrame()
     
     for col in colomns:
@@ -140,29 +173,36 @@ def to_table(colomns, index=0, error=True, inline_error=False, save=False, file_
             if len(errors) > 0:
                 df[r"$\sigma_{}$".format("{" + str(name) + "}")] = errors
 
-    if hasattr(colomns[index], 'un'): 
-        df = df.set_index(r"${}$ \\ $[{}]$".format(colomns[index].name, unit_to_latex(colomns[index].un)))
-    else:
-        df = df.set_index(r"${}$".format(colomns[index].name))
+    if type(index) is int:
+        if hasattr(colomns[index], 'un'): 
+            df = df.set_index(r"${}$ \\ $[{}]$".format(colomns[index].name, unit_to_latex(colomns[index].un)))
+        else:
+            df = df.set_index(r"${}$".format(colomns[index].name))
+    elif isinstance(index, pd.Series):
+         df = df.set_index(index)
+
 
     if save == 'csv':
-        df.to_csv(file_name + '.csv', sep=";", decimal=",", index=True)
+        df.to_csv(fname + '.csv', sep=";", decimal=",", index=True)
 
     elif save == 'tex':
-        pandas_to_latex(df, file_name)
+        pandas_to_latex(df, fname)
 
     elif save == 'latex':
-        df.to_latex(file_name + '.tex', escape=False, multirow=True, multicolumn=True)
+        df.to_latex(fname + '.tex', escape=False, multirow=True, multicolumn=True)
     
     return df
     
 
-def unit_to_latex(string):
-    return re.sub(r"([a-zA-Z]+)", r'\\text{\1}', string)
+def unit_to_latex(string, plt=None):
+    if plt is None:
+        return re.sub(r"([a-zA-Z]+)", r'\\text{\1}', string)
+    else:
+        return re.sub(r"([a-zA-Z]+)", r'\\mathrm{\1}', string)
 
 
-def pandas_to_latex(df, file_name):
-    outfile = open(file_name + '.tex', 'w')
+def pandas_to_latex(df, fname):
+    outfile = open(fname + '.tex', 'w')
     col_setup = '{'
     for _ in range(len(df.keys()) + 1):
         col_setup += 'c'
@@ -186,3 +226,4 @@ def pandas_to_latex(df, file_name):
     for val in string:
         outfile.write(val + '\n')
     outfile.close()
+
