@@ -32,6 +32,7 @@ class MA(q.MeasurementArray):
         sum_of_squares = sum([error**2 for error in self.errors])
         return q.Measurement(self.mean().value, np.sqrt(sum_of_squares) / len(self.errors))
 
+
 def plot(xdata, ydata, xlabel=None, ylabel=None, ax=None, fname=None, fmt='o', label=None):
 
     own_fig = False
@@ -68,9 +69,9 @@ def plot(xdata, ydata, xlabel=None, ylabel=None, ax=None, fname=None, fmt='o', l
         plt.savefig(fname + '.png')
 
     if own_fig:
-        return  self_ax, fig
+        return self_ax, fig
     else:
-        return  self_ax
+        return self_ax
 
 
 def fitNplot(xdata, ydata, model, guess, xlabel=None, ylabel=None, ax=None, fname=None, exclude=None, fmt1='o', model_fmt='-', label=None):
@@ -88,7 +89,7 @@ def fitNplot(xdata, ydata, model, guess, xlabel=None, ylabel=None, ax=None, fnam
         self_ax = ax
 
     params = [exp_val.value for exp_val in fit.params]
-    x_fit = np.linspace(xdata.values.min(), xdata.values.max(), 10*len(xdata.values))
+    x_fit = np.linspace(xdata.values.min(), xdata.values.max(), 10 * len(xdata.values))
     model_vals = model(x_fit, *params)
     self_ax.plot(x_fit, model_vals, model_fmt, zorder=10)
 
@@ -152,7 +153,10 @@ def to_table(colomns, index=0, error=True, inline_error=False, save=False, fname
                         values.append(int(round(col.values[j], first_sgn(errors[-1]))))
 
                 else:
-                    values.append(round(col.values[j], first_sgn(col.errors[j])))
+                    if first_sgn(col.errors[j]) > 0: 
+                        values.append(round(col.values[j], first_sgn(col.errors[j])))
+                    else:
+                        values.append(int(round(col.values[j], first_sgn(col.errors[j]))))
             else:
                 values = np.round_(col.values, 1)
                 break
@@ -179,14 +183,16 @@ def to_table(colomns, index=0, error=True, inline_error=False, save=False, fname
         else:
             df = df.set_index(r"${}$".format(colomns[index].name))
     elif isinstance(index, pd.Series):
-         df = df.set_index(index)
-
+        df = df.set_index(index)
 
     if save == 'csv':
         df.to_csv(fname + '.csv', sep=";", decimal=",", index=True)
 
     elif save == 'tex':
-        pandas_to_latex(df, fname)
+        if type(index) is int:  
+            pandas_to_latex(df, fname)
+        else:
+            pandas_to_latex(df, fname, True)
 
     elif save == 'latex':
         df.to_latex(fname + '.tex', escape=False, multirow=True, multicolumn=True)
@@ -201,7 +207,7 @@ def unit_to_latex(string, plt=None):
         return re.sub(r"([a-zA-Z]+)", r'\\mathrm{\1}', string)
 
 
-def pandas_to_latex(df, fname):
+def pandas_to_latex(df, fname, index=False):
     outfile = open(fname + '.tex', 'w')
     col_setup = '{'
     for _ in range(len(df.keys()) + 1):
@@ -215,13 +221,39 @@ def pandas_to_latex(df, fname):
     col_names = col_names[:-1] 
     string += [col_names + r'\\', r'\midrule']
 
+    old_idx = None
+    old_multirow_num = 0
+    new_multirow_num = 0
     for idx, idx_val in enumerate(df.index):
-        row_string = f'{idx_val}  &'
+        if index:
+            multi_bool = False
+            if idx_val == old_idx:
+                row_string = r'  &'
+                new_multirow_num += 1
+            else:
+                old_idx = idx_val
+                row_string = r'\multirow{...}{*}{' + f'{idx_val}' + r'} &'
+                new_multirow_num = 1
+
+            if new_multirow_num <= old_multirow_num:
+                multi_bool = True
+                string[-old_multirow_num] = string[-old_multirow_num].replace('...', f'{old_multirow_num}')
+            multirow_num = new_multirow_num
+
+            if multi_bool and idx != len(df.index): 
+                string[-1] = string[-1] + r' \hline'
+            old_multirow_num = multirow_num
+
+        else:
+            row_string = f'{idx_val}  &'
+
         for col_num, col in enumerate(df.keys()):
             row_string += f'  {df.iloc[idx,col_num]}  &'
         string += [row_string[:-1] + r'\\']
 
-    # string[-1] += r' \hline'
+    if index:
+        string[-old_multirow_num] = string[-old_multirow_num].replace('...', f'{old_multirow_num}')
+
     string += [r'\bottomrule', r'\end{tabular}', r'\end{table}']
     for val in string:
         outfile.write(val + '\n')
