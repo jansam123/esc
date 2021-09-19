@@ -1,7 +1,8 @@
 import numpy as np
 import qexpy as q 
 import sys
-import template_fce as fce
+import praktika.classMA as pMA
+import praktika.functions as pFCE
 import pandas as pd 
 import matplotlib.pyplot as plt
 from matplotlib import container
