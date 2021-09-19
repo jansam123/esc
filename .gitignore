@@ -3,6 +3,6 @@ test_codes/
 main*
 !main.tex
 __pycache__/
-plot.png
-LaTeX/tables/
+LaTeX/tables/*
+LaTeX/graphs/*
 .vscode/
