@@ -1,8 +1,10 @@
 import numpy as np
-import qexpy as q 
-import praktika.Plot as pt
-import praktika.Table as tab
-import praktika.Data as dat
-import praktika.LoadData as ldat
-import pandas as pd 
+import qexpy as q
+import praktika as prak
+import pandas as pd
+
+graph_save_path = 'LaTeX/graphs'
+tab_save_path = 'LaTeX/tables'
+
+load_dat = prak.LoadData('data')
 
