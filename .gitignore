@@ -3,6 +3,4 @@ test_codes/
 main*
 !main.tex
 __pycache__/
-LaTeX/tables/*
-LaTeX/graphs/*
 .vscode/
