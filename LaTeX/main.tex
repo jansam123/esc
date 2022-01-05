@@ -3,7 +3,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage[slovak]{babel}
 \usepackage[T1]{fontenc}
-\usepackage{graphicx}\usepackage{lmodern}
+\usepackage{graphicx}
+\usepackage{lmodern}
 \usepackage[top = 2cm, bottom = 2cm, left = 2cm, right = 2cm]{geometry}
 
     
@@ -20,7 +21,9 @@
 \usepackage{newfloat}
 \usepackage{multirow}
 \usepackage{dirtytalk}
-
+\usepackage{xspace}
+\usepackage{upgreek}
+\usepackage{placeins}
 
 \DeclareFloatingEnvironment{graph}
 \addto\captionsczech{%
@@ -51,6 +54,12 @@
 \newcommand\datumMerani{} %format: 30.\,9.\,2021 
 %----------------------------------------------------------------------------------
  
+
+% \newcommand{\pt}{\ensuremath{p_{\mathrm{T}}}\xspace}
+% \newcommand{\ptt}{\ensuremath{p_{\text{T}}}\xspace} 
+% $10~\mathrm{\upmu m}$
+
+
 \begin{document}
 \input{title_page.tex}
 
@@ -59,16 +68,20 @@
 
 \section{Teória}
 \input{sections/teoria.tex}
+\FloatBarrier
 
 \section{Výsledky a spracovanie merania}
 \input{sections/vysledky_a_spracovanie_merania.tex}
+\FloatBarrier
 
 
 \section{Diskusia}
 \input{sections/diskusia.tex}
+\FloatBarrier
 
 \section{Záver}
 \input{sections/zaver.tex}
+\FloatBarrier
  
 
 \bibliography{/Users/samueljankovych/Documents/bibtex/Praktika.bib}
